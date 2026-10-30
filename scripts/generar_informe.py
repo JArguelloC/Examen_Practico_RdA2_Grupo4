@@ -67,13 +67,13 @@ th, td { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 4px
 .tabla-t { font-weight: bold; text-indent: 0; line-height: 1.3; }
 .tabla-n { font-style: italic; text-indent: 0; line-height: 1.3; margin-bottom: 4px; }
 figure { margin: 0.5cm 0; text-align: center; page-break-inside: avoid; }
-figure img { max-height: 11cm; max-width: 100%; border: 1px solid #999; }
+figure img { max-height: 9.5cm; max-width: 100%; border: 1px solid #999; }
 figcaption { font-size: 11pt; line-height: 1.3; font-style: italic; }
 .falta { border: 1px dashed #c00; color: #c00; padding: 2cm 0; line-height: 1.3; font-size: 11pt; }
 pre { font-family: Consolas, 'Courier New', monospace; font-size: 7.5pt; line-height: 1.25; white-space: pre-wrap;
       word-break: break-word; border: 1px solid #bbb; padding: 6px; background: #fafafa; }
 .codigo-t { font-weight: bold; text-indent: 0; line-height: 1.3; font-size: 10pt; margin-top: 8px; }
-.diagrama { font-family: Consolas, monospace; font-size: 8.5pt; line-height: 1.25; white-space: pre; text-indent: 0;
+.diagrama { font-family: Consolas, monospace; font-size: 7.5pt; line-height: 1.2; white-space: pre; text-indent: 0; overflow: hidden;
             border: 1px solid #000; padding: 8px; margin: 0.4cm 0; }
 .ref { padding-left: 1.27cm; text-indent: -1.27cm; }
 """
@@ -93,26 +93,30 @@ def figura(nombre, pie):
             f'<figcaption>{esc(pie)}</figcaption></figure>')
 
 
-DIAGRAMA = """\
-+------------------+   eventos (onDestinoChange, ...)   +-----------------------+
-|   Composables    | ---------------------------------> |    EcoTripViewModel   |
-| FormularioScreen |                                    |  (fuente única de     |
-| ResumenScreen    | <--------------------------------- |   verdad)             |
-+------------------+   StateFlow<FormularioUiState>     +-----------+-----------+
-                                                         |           |
-                  estado temporal de formulario          |           | preferencias globales
-                  (destino, días, modo grupal)           v           v
-                                              +----------------+  +-----------------+
-                                              | SavedStateHandle| |  EcoTripDataStore|
-                                              | (sobrevive a    | |  (disco)         |
-                                              |  muerte proceso)| |  Flow<Preferencia|
-                                              +----------------+  |  Viaje>          |
-                                                                  +--------+--------+
-                                                                           |
-                                                                  +--------v--------+
-                                                                  | PreferenciaViaje|
-                                                                  | (data class val)|
-                                                                  +-----------------+"""
+DIAGRAMA = """   +--------------------------------------------+
+   |  Composables: FormularioScreen / Resumen   |
+   +--------------------------------------------+
+        |  eventos            ^  StateFlow<
+        |  (onDestinoChange)  |  FormularioUiState>
+        v                     |
+   +--------------------------------------------+
+   |   EcoTripViewModel (fuente unica de verdad)|
+   +--------------------------------------------+
+        |                                  |
+        | estado temporal                  | preferencias
+        v                                  v
+   +--------------------+        +----------------------+
+   |  SavedStateHandle  |        |   EcoTripDataStore   |
+   |  destino, dias,    |        |   (disco) expone     |
+   |  modo grupal,      |        |   Flow<Preferencia   |
+   |  nombre, transporte|        |   Viaje>             |
+   |  (muerte proceso)  |        +----------+-----------+
+   +--------------------+                   |
+                                            v
+                                 +----------------------+
+                                 |   PreferenciaViaje   |
+                                 |  data class (val)    |
+                                 +----------------------+"""
 
 
 def cuerpo():
