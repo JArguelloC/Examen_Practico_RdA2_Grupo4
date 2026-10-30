@@ -27,6 +27,9 @@ class EcoTripViewModel(
         const val KEY_DESTINO = "destino"
         const val KEY_DIAS = "dias"
         const val KEY_ES_GRUPAL = "esGrupal"
+        const val KEY_NOMBRE = "nombreViajero"
+        const val KEY_TRANSPORTE = "transporte"
+        const val KEY_BAJA_HUELLA = "soloBajaHuella"
 
         fun factory(application: Application): ViewModelProvider.Factory = viewModelFactory {
             initializer {
@@ -43,7 +46,12 @@ class EcoTripViewModel(
         FormularioUiState(
             destino = savedStateHandle.get<String>(KEY_DESTINO) ?: "",
             diasDuracionTexto = savedStateHandle.get<String>(KEY_DIAS) ?: "",
-            esViajeGrupal = savedStateHandle.get<Boolean>(KEY_ES_GRUPAL) ?: false
+            esViajeGrupal = savedStateHandle.get<Boolean>(KEY_ES_GRUPAL) ?: false,
+            nombreViajero = savedStateHandle.get<String>(KEY_NOMBRE) ?: "",
+            transporteSeleccionado = savedStateHandle.get<String>(KEY_TRANSPORTE)
+                ?.let { runCatching { TipoTransporte.valueOf(it) }.getOrNull() }
+                ?: TipoTransporte.TREN,
+            soloBajaHuella = savedStateHandle.get<Boolean>(KEY_BAJA_HUELLA) ?: false
         )
     )
     val uiState: StateFlow<FormularioUiState> = _uiState.asStateFlow()
@@ -81,14 +89,17 @@ class EcoTripViewModel(
     }
 
     fun onNombreChange(nuevoNombre: String) {
+        savedStateHandle[KEY_NOMBRE] = nuevoNombre
         _uiState.update { it.copy(nombreViajero = nuevoNombre) }
     }
 
     fun onTransporteChange(transporte: TipoTransporte) {
+        savedStateHandle[KEY_TRANSPORTE] = transporte.name
         _uiState.update { it.copy(transporteSeleccionado = transporte) }
     }
 
     fun onSoloBajaHuellaChange(soloBajaHuella: Boolean) {
+        savedStateHandle[KEY_BAJA_HUELLA] = soloBajaHuella
         _uiState.update { it.copy(soloBajaHuella = soloBajaHuella) }
     }
 
@@ -110,10 +121,11 @@ class EcoTripViewModel(
         viewModelScope.launch {
             dataStore.preferenciaViajeFlow.collect { pref ->
                 _uiState.update {
+                    // Lo que el usuario ya escribió (SavedStateHandle) prevalece sobre el disco.
                     it.copy(
-                        nombreViajero = pref.nombreViajero,
-                        transporteSeleccionado = pref.transporteSeleccionado,
-                        soloBajaHuella = pref.soloBajaHuella
+                        nombreViajero = if (savedStateHandle.contains(KEY_NOMBRE)) it.nombreViajero else pref.nombreViajero,
+                        transporteSeleccionado = if (savedStateHandle.contains(KEY_TRANSPORTE)) it.transporteSeleccionado else pref.transporteSeleccionado,
+                        soloBajaHuella = if (savedStateHandle.contains(KEY_BAJA_HUELLA)) it.soloBajaHuella else pref.soloBajaHuella
                     )
                 }
             }

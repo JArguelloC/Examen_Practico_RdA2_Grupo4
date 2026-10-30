@@ -56,6 +56,9 @@ Dispositivo: Emulador Android API 36 (Android 16). Guardar las capturas en `docs
 | 4 | Tests instrumentados | | ☐ OK ☐ Falla | |
 | 5 | Navegación / back stack | | ☐ OK ☐ Falla | |
 
-## Observaciones del código a vigilar durante la QA
-- `nombreViajero`, `transporte` y `soloBajaHuella` van a DataStore y **solo se guardan al pulsar el FAB** (`guardarPreferencias`); si el proceso muere antes de pulsarlo, se pierden. Es coherente con el diseño, pero conviene mencionarlo en el informe.
-- `onNombreChange`, `onTransporteChange` y `onSoloBajaHuellaChange` no usan `SavedStateHandle`: tras muerte de proceso vuelven al valor de DataStore, no al último escrito sin guardar.
+## Hallazgos de la QA
+- **Corregido.** La primera prueba real de muerte de proceso mostró que nombre, transporte y «baja huella» se perdían (solo se guardaban en DataStore al pulsar el FAB). Ahora también se registran en `SavedStateHandle` y prevalecen sobre el disco al iniciar.
+- **Corregido.** Espresso 3.6.1 falla en Android 16 (`InputManager.getInstance`); se subió a 3.7.0 en `libs.versions.toml`.
+
+## Resultados (ejecutados en Pixel 8 API 36)
+Rotación OK · Muerte de proceso OK (PID 7008 → 7174 tras `am kill`) · Material You OK (fondo naranja) · `connectedDebugAndroidTest` 6/6 OK.

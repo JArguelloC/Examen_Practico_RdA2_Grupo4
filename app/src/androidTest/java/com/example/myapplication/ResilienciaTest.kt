@@ -10,6 +10,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.myapplication.data.local.EcoTripDataStore
+import com.example.myapplication.data.model.TipoTransporte
 import com.example.myapplication.ui.viewmodel.EcoTripViewModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -51,7 +52,10 @@ class ResilienciaTest {
             mapOf(
                 EcoTripViewModel.KEY_DESTINO to "Galápagos",
                 EcoTripViewModel.KEY_DIAS to "7",
-                EcoTripViewModel.KEY_ES_GRUPAL to true
+                EcoTripViewModel.KEY_ES_GRUPAL to true,
+                EcoTripViewModel.KEY_NOMBRE to "Ángel",
+                EcoTripViewModel.KEY_TRANSPORTE to TipoTransporte.BICICLETA.name,
+                EcoTripViewModel.KEY_BAJA_HUELLA to true
             )
         )
 
@@ -61,6 +65,9 @@ class ResilienciaTest {
         assertEquals("Galápagos", state.destino)
         assertEquals("7", state.diasDuracionTexto)
         assertTrue(state.esViajeGrupal)
+        assertEquals("Ángel", state.nombreViajero)
+        assertEquals(TipoTransporte.BICICLETA, state.transporteSeleccionado)
+        assertTrue(state.soloBajaHuella)
     }
 
     @Test

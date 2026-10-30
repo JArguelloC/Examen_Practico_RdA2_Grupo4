@@ -27,10 +27,14 @@ EVIDENCIAS = [
      "Figura 2. Formulario de viaje con datos válidos (modo vertical, emulador API 36)."),
     ("02-rotacion-horizontal.png",
      "Figura 3. Prueba de rotación: el formulario conserva los datos en modo horizontal."),
+    ("04a-process-death-antes.png",
+     "Figura 4. Muerte de proceso, antes: formulario lleno con «No conservar actividades» activo."),
     ("04-process-death-despues.png",
-     "Figura 4. Prueba de muerte de proceso (\"No conservar actividades\"): sin pérdida de datos."),
+     "Figura 5. Muerte de proceso, después: el proceso fue terminado (am kill) y todos los campos se restauraron."),
+    ("05a-material-you-formulario-naranja.png",
+     "Figura 6. Formulario con Color Dinámico tras cambiar el fondo de pantalla a naranja."),
     ("06-material-you-resumen.png",
-     "Figura 5. Pantalla de Resumen con Color Dinámico tras cambiar el fondo de pantalla."),
+     "Figura 7. Pantalla de Resumen de Ruta con Color Dinámico tras cambiar el fondo de pantalla."),
 ]
 
 CODIGO = [
@@ -165,17 +169,25 @@ ambos campos son válidos.</p>""")
 
     # Evidencias
     p.append('<h1>Evidencias de pruebas de resiliencia</h1>')
-    p.append("""<p>Las pruebas se ejecutaron en un emulador Android API 36 (Android 16). Además de las pruebas manuales, el
+    p.append("""<p>Las pruebas se ejecutaron en el emulador Pixel 8 con Android 16 (API 36). Además de las pruebas manuales, el
 proyecto incluye pruebas instrumentadas (<i>ResilienciaTest</i>) que recrean la Activity y verifican la restauración del
-<i>SavedStateHandle</i>.</p>""")
+<i>SavedStateHandle</i>. Para la muerte de proceso se activó «No conservar actividades», se envió la app a segundo plano
+y se terminó el proceso con <i>adb shell am kill</i>: el identificador de proceso cambió (7008 → 7174), lo que confirma que
+el proceso fue recreado y no solo la Activity. Para el Color Dinámico se aplicó un fondo de pantalla naranja desde el
+selector del sistema y se reabrió la app: la paleta pasó de azul a naranja sin cambios de código.</p>
+<p>Durante la primera ejecución de la prueba de muerte de proceso se detectó un defecto: destino, días y modo grupal se
+restauraban, pero el nombre, el transporte y la bandera de baja huella volvían a sus valores por defecto, porque solo se
+guardaban en DataStore al pulsar el botón de guardar. Se corrigió registrando también esos tres campos en el
+<i>SavedStateHandle</i> y dándoles prioridad sobre el valor del disco al iniciar. Las capturas de este informe corresponden
+a la versión corregida.</p>""")
     for nombre, pie in EVIDENCIAS:
         p.append(figura(nombre, pie))
     p.append("""<p class="tabla-t">Tabla 2</p><p class="tabla-n">Resultados de las pruebas</p>
 <table><tr><th>Prueba</th><th>Procedimiento</th><th>Resultado</th></tr>
-<tr><td>Rotación</td><td>Llenar formulario y rotar vertical ↔ horizontal</td><td>COMPLETAR (OK / Falla)</td></tr>
-<tr><td>Muerte de proceso</td><td>Activar «No conservar actividades», enviar la app a segundo plano y regresar</td><td>COMPLETAR</td></tr>
-<tr><td>Material You</td><td>Cambiar el fondo de pantalla y reabrir la app</td><td>COMPLETAR</td></tr>
-<tr><td>Instrumentadas</td><td><i>./gradlew connectedDebugAndroidTest</i></td><td>COMPLETAR</td></tr></table>""")
+<tr><td>Rotación</td><td>Llenar formulario y rotar vertical ↔ horizontal</td><td>OK. Los cinco campos conservan su valor</td></tr>
+<tr><td>Muerte de proceso</td><td>Activar «No conservar actividades», enviar la app a segundo plano, <i>am kill</i> y regresar</td><td>OK tras la corrección (falló antes con 3 de 6 campos)</td></tr>
+<tr><td>Material You</td><td>Cambiar el fondo de pantalla a naranja y reabrir la app</td><td>OK. La paleta de la UI cambió a tonos naranja</td></tr>
+<tr><td>Instrumentadas</td><td><i>./gradlew connectedDebugAndroidTest</i></td><td>OK. 6 de 6 pruebas aprobadas</td></tr></table>""")
 
     # Type safety
     p.append('<h1>Navegación fuertemente tipada frente a Strings y Bundles</h1>')
@@ -206,19 +218,21 @@ formularios duplicados en la pila.</p>""")
 
     # Conclusiones
     p.append('<h1>Conclusiones y recomendaciones</h1>')
-    p.append("""<p>Los resultados de las pruebas de resiliencia (completar con los resultados reales de la Tabla 2) respaldan la
+    p.append("""<p>Los resultados de las pruebas de resiliencia (Tabla 2) respaldan la
 estrategia de separar el estado por su ciclo de vida: ViewModel para la recomposición y rotación, <i>SavedStateHandle</i>
 para la muerte de proceso y DataStore para la persistencia permanente. La navegación tipada reduce la superficie de errores
 en tiempo de ejecución y concentra los restantes en la validación de valores.</p>
 <p>Recomendaciones de ingeniería:</p>
-<p>1. Mover a <i>SavedStateHandle</i> también el nombre, el transporte y la bandera de baja huella mientras no se hayan
-guardado. Hoy esos campos solo se persisten al pulsar el botón de guardar; si el proceso muere antes, el usuario recupera
-el último valor guardado en DataStore, no lo que había escrito.</p>
-<p>2. Incorporar pruebas unitarias del ViewModel con un <i>DataStore</i> inyectable mediante una interfaz, para ejecutarlas
+<p>1. Registrar en <i>SavedStateHandle</i> todo campo de entrada, aunque también tenga destino en DataStore. La prueba de
+muerte de proceso demostró que lo que solo vive en memoria o en un almacenamiento que se escribe «al guardar» se pierde
+antes de guardar. Esta recomendación ya fue aplicada en la versión entregada.</p>
+<p>2. Mantener Espresso actualizado: con la versión 3.6.1 las pruebas instrumentadas fallan en Android 16 por la
+eliminación de <i>InputManager.getInstance</i>; se corrigió subiendo a 3.7.0 en el catálogo de versiones.</p>
+<p>3. Incorporar pruebas unitarias del ViewModel con un <i>DataStore</i> inyectable mediante una interfaz, para ejecutarlas
 sin dispositivo.</p>
-<p>3. Incluir la prueba de «No conservar actividades» en la lista de verificación de cada entrega, ya que es la forma más
+<p>4. Incluir la prueba de «No conservar actividades» en la lista de verificación de cada entrega, ya que es la forma más
 barata de detectar estado perdido.</p>
-<p>4. Pasar a la pantalla de resumen solo un identificador o recuperar los datos desde una única fuente, en lugar de
+<p>5. Pasar a la pantalla de resumen solo un identificador o recuperar los datos desde una única fuente, en lugar de
 copiar seis campos en la ruta, si el modelo crece.</p>""")
 
     # Referencias
